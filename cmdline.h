@@ -36,7 +36,9 @@
 #include <typeinfo>
 #include <cstring>
 #include <algorithm>
+#ifdef __GNUC__
 #include <cxxabi.h>
+#endif
 #include <cstdlib>
 
 namespace cmdline{
@@ -104,11 +106,19 @@ Target lexical_cast(const Source &arg)
 
 static inline std::string demangle(const std::string &name)
 {
+
+#ifdef _MSC_VER
+    return name;
+#elif defined(__GNUC__)
   int status=0;
   char *p=abi::__cxa_demangle(name.c_str(), 0, 0, &status);
   std::string ret(p);
   free(p);
   return ret;
+#else
+#error Unexpected c complier (mscv/gcc)
+#error Need to implement this method for demangle
+#endif
 }
 
 template <class T>
@@ -566,7 +576,14 @@ public:
 
     size_t max_width=0;
     for (size_t i=0; i<ordered.size(); i++){
+#ifdef __GNUC__
       max_width=std::max(max_width, ordered[i]->name().length());
+#elif defined(_MSC_VER)
+      max_width = (std::max)(max_width, (ordered[i]->name().length()));
+#else
+#error Unexpected c complier (mscv/gcc)
+#error Need to refine here
+#endif
     }
     for (size_t i=0; i<ordered.size(); i++){
       if (ordered[i]->short_name()){
